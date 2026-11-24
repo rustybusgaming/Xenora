@@ -85,6 +85,7 @@ remains unsupported.
 
 ### Changed
 
+- The hand-written gfx1030 VOP2 forms `v_and_b32`, `v_or_b32`, `v_xor_b32`, `v_lshlrev_b32`, `v_lshrrev_b32` and `v_ashrrev_i32` now lower through the shared per-lane `VectorBinary` MSL templates that registry VOP2 forms use. The semantic-registry generator now accepts `and`, `or`, `xor`, `lshl`, `lshr` and `ashr` for vector forms, and for a reversed form (`source_order = "reversed"`) it checks the shift count on SRC0 rather than VSRC1. This is groundwork (stage 1) for moving these six forms into the registry. They are still decoded by hand-written code, still accept only VGPR sources, and are not yet declared in the registry, pending checked AMD guide page citations. Local CPU evidence only: the compiler's IR and MSL for all 13 compute fixtures were byte-identical before and after the change, and the generator tests cover the new rules. The native Metal suite was not run, so the existing Apple M5 results were not re-checked.
 - Simplified the claim rules in `AGENTS.md`, `CONTRIBUTING.md` and the pull request template at the maintainer's request: claim an issue by replying on it in plain words, never claim over an existing claim, and treat a claim as stale only after about one week without a pull request. The task-queue lease (`lease_hours` in `.github/agent-queue.json`) is now 168 hours to match, and `docs/coordination/agent-tasks.md` marks the queue commands as optional.
 - The static PE probe now marks x86-64 SIB memory addressing as DBT-supported, matching the
   native DBT.

@@ -127,22 +127,26 @@ def snapshot():
             ["ENCODING", [[31, 1]]],
         ],
         "identifier_mask": 0xFE000000,
-        "identifiers": [op << 25 for op in (9, 17, 39)],
+        "identifiers": [op << 25 for op in (9, 17, 24, 27, 39)],
     }
 
-    def vector(data_format):
+    def vector(data_format, src0_format=None):
         return [
             ["VDST", data_format, "OPR_VGPR", 32, False, True, False, True],
-            ["SRC0", data_format, "OPR_SRC", 32, True, False, False, True],
+            ["SRC0", src0_format or data_format, "OPR_SRC", 32, True, False, False, True],
             ["VSRC1", data_format, "OPR_VGPR", 32, True, False, False, True],
         ]
 
-    for name, opcode, data_format in (
-        ("V_MUL_I32_I24", 9, I32), ("V_MIN_I32", 17, I32), ("V_SUBREV_NC_U32", 39, U32),
+    # V_ASHRREV_I32 reads its shift count from SRC0, which the XML gives
+    # FMT_NUM_U32 while VDST and VSRC1 are FMT_NUM_I32.
+    for name, opcode, data_format, src0_format in (
+        ("V_MUL_I32_I24", 9, I32, None), ("V_MIN_I32", 17, I32, None),
+        ("V_ASHRREV_I32", 24, I32, U32), ("V_AND_B32", 27, U32, None),
+        ("V_SUBREV_NC_U32", 39, U32, None),
     ):
         variants[(name, "ENC_VOP2")] = {
             "instruction": name, "encoding": "ENC_VOP2", "opcode": opcode,
-            "operands": vector(data_format),
+            "operands": vector(data_format, src0_format),
         }
     return {
         "source": {"sha256": SHA},
@@ -212,6 +216,13 @@ def vectors():
         vector("V_MUL_I32_I24", 9, "MulI32I24", "mul24", "signed"),
         # The same variant name as a scalar form: variants are per enum.
         vector("V_MIN_I32", 17, "AddU32", "min", "signed"),
+        # D = S1 >> S0[4:0]: the count is S0, so the reversal moves the
+        # control-operand check from VSRC1 to SRC0.
+        vector(
+            "V_ASHRREV_I32", 24, "AshrrevI32", "ashr", "signed",
+            source_order="reversed", shift_count_bits=5,
+        ),
+        vector("V_AND_B32", 27, "AndB32", "and", "bitwise"),
         vector("V_SUBREV_NC_U32", 39, "SubrevNcU32", "sub", "unsigned", source_order="reversed"),
     ]
     return reg
@@ -665,6 +676,46 @@ class Validate(unittest.TestCase):
         self.assertIn("Self::SubrevNcU32 => true,", text.split("fn swaps_sources", 1)[1])
         self.assertIn('Self::AddU32 => "v_min_i32_e32",', text)
         self.assertIn("swap_sources: true,", text)
+
+    def test_renders_vector_bitwise_and_shift_lowering(self):
+        text = gen.render(vectors(), snapshot())
+        self.assertIn("Self::AndB32 => VectorBinary::And,", text)
+        self.assertIn("Self::AshrrevI32 => VectorBinary::ArithmeticShiftRight,", text)
+        self.assertIn("Self::AshrrevI32 => true,", text.split("fn swaps_sources", 1)[1])
+        self.assertIn("Self::AndB32 => false,", text.split("fn swaps_sources", 1)[1])
+        self.assertIn("shift_count_bits: 5,", text)
+
+    def test_rejects_a_reversed_shift_declared_in_source_order(self):
+        # Without the reversal the count would be VSRC1, which is FMT_NUM_I32.
+        reg = vectors()
+        del form(reg, "V_ASHRREV_I32")["source_order"]
+        self.rejects(
+            reg, "V_ASHRREV_I32: control operand VSRC1 has XML format FMT_NUM_I32, not FMT_NUM_U32"
+        )
+
+    def test_rejects_a_reversed_shift_whose_count_is_signed_in_the_xml(self):
+        snap = snapshot()
+        snap["variants"][("V_ASHRREV_I32", "ENC_VOP2")]["operands"][1][1] = I32
+        self.rejects(
+            vectors(),
+            "V_ASHRREV_I32: control operand SRC0 has XML format FMT_NUM_I32, not FMT_NUM_U32",
+            snap,
+        )
+
+    def test_rejects_a_vector_shift_without_a_count_width(self):
+        reg = vectors()
+        del form(reg, "V_ASHRREV_I32")["shift_count_bits"]
+        self.rejects(reg, "V_ASHRREV_I32: shift_count_bits must be log2 of the width (32), got None")
+
+    def test_rejects_an_unsigned_vector_arithmetic_shift(self):
+        reg = vectors()
+        form(reg, "V_ASHRREV_I32")["signedness"] = "unsigned"
+        self.rejects(reg, "V_ASHRREV_I32: no primitive implements ashr/unsigned")
+
+    def test_rejects_a_signed_vector_and(self):
+        reg = vectors()
+        form(reg, "V_AND_B32")["signedness"] = "signed"
+        self.rejects(reg, "V_AND_B32: signedness signed contradicts operation and")
 
     def test_accepts_compares(self):
         self.assertEqual(self.errors(compares()), [])

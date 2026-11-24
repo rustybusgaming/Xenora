@@ -188,7 +188,13 @@ PRIMITIVES = {
 VECTOR_PRIMITIVES = {
     ("add", "unsigned"): "Add",
     ("sub", "unsigned"): "Sub",
+    ("and", "bitwise"): "And",
+    ("or", "bitwise"): "Or",
+    ("xor", "bitwise"): "Xor",
     ("xnor", "bitwise"): "Xnor",
+    ("lshl", "bitwise"): "ShiftLeft",
+    ("lshr", "unsigned"): "LogicalShiftRight",
+    ("ashr", "signed"): "ArithmeticShiftRight",
     ("min", "signed"): "MinSigned",
     ("min", "unsigned"): "MinUnsigned",
     ("max", "signed"): "MaxSigned",
@@ -381,7 +387,10 @@ def _check_xml(form, rule, snapshot, errors):
     fields = [(rule["dst"]["field"], False)] if "dst" in rule else []
     fields += [(src["field"], True) for src in rule["src"]]
     shift = form["operation"] in CONTROL_S1 and len(rule["src"]) > 1
-    count_field = rule["src"][1]["field"] if shift else None
+    # The control word is the operation's second operand: S1, or S0 for a
+    # reversed vector form (D = op(S1, S0), as in v_lshlrev_b32).
+    count_index = 0 if SOURCE_ORDER_KEY in form else 1
+    count_field = rule["src"][count_index]["field"] if shift else None
     for field, is_source in fields:
         if field not in operands:
             errors.append(f"{label}: XML has no operand {field}")

@@ -101,8 +101,20 @@ pub enum VectorBinary {
     Add,
     /// Wrapping `a - b`.
     Sub,
+    /// `a & b`.
+    And,
+    /// `a | b`.
+    Or,
+    /// `a ^ b`.
+    Xor,
     /// `!(a ^ b)`.
     Xnor,
+    /// `a << b[4:0]`. Reversed forms pass the count as `b`, so `a` is S1.
+    ShiftLeft,
+    /// `a >> b[4:0]`, filling with zeros.
+    LogicalShiftRight,
+    /// `a >> b[4:0]`, filling with the sign bit of `a`.
+    ArithmeticShiftRight,
     /// Two's-complement minimum.
     MinSigned,
     /// Unsigned minimum.

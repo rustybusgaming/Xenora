@@ -101,9 +101,16 @@ must be `unchanged` (VOP2 integer forms write no SCC, VCC or EXEC):
 | `operation` / `signedness` | `VectorBinary` |
 | --- | --- |
 | `add` / `unsigned`, `sub` / `unsigned` | `Add`, `Sub` |
-| `xnor` / `bitwise` | `Xnor` |
+| `and`, `or`, `xor`, `xnor` / `bitwise` | `And`, `Or`, `Xor`, `Xnor` |
+| `lshl` / `bitwise`, `lshr` / `unsigned`, `ashr` / `signed` | `ShiftLeft`, `LogicalShiftRight`, `ArithmeticShiftRight` |
 | `min`, `max` / `signed` or `unsigned` | `MinSigned`, `MinUnsigned`, `MaxSigned`, `MaxUnsigned` |
 | `mul24`, `mul_hi24` / `signed` or `unsigned` | `Mul24Signed`, `Mul24Unsigned`, `MulHi24Signed`, `MulHi24Unsigned` |
+
+No registry form uses `And`, `Or`, `Xor` or the three shifts yet. The
+hand-written VGPR-only forms `v_and_b32`, `v_or_b32`, `v_xor_b32`,
+`v_lshlrev_b32`, `v_lshrrev_b32` and `v_ashrrev_i32` already lower through
+these templates. Declaring them here is waiting on their guide page
+citations, which have not been checked.
 
 A compare must use an operand rule of the compare kind (`sopc_scalar`: two
 sources, no destination), a unary operation one of the unary kind (`sop1_sgpr`:
@@ -125,7 +132,8 @@ vocabularies above, it rejects:
   variant, a different opcode, an SCC input or output the XML does not show (or
   that the declaration omits), an operand width other than `width`, a signed
   declaration on unsigned XML formats or the reverse (a shift count or the `bfe`
-  field descriptor in S1 must be `FMT_NUM_U32` whatever the signedness), an operand direction that
+  field descriptor must be `FMT_NUM_U32` whatever the signedness; it is S1, or S0
+  for a vector form with `source_order = "reversed"` such as `v_lshlrev_b32`), an operand direction that
   differs, and XML operands the operand rule does not cover;
 - references: a spec citing an undeclared document, a bad section or page, or
   no guide page at all;
