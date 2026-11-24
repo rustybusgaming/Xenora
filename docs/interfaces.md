@@ -207,3 +207,15 @@ compare function. Colour and the stored depth are both read back.
 
 These passes are checked on the GPU with Metal validation against expectations
 derived independently from the public semantics; synthetic fixtures only.
+
+`NativeCompute::render_mesh` takes the same `IndexedPass` and draws it through
+Metal's mesh render pipeline instead: one `drawMeshThreadgroups` call per draw
+with one mesh threadgroup per triangle and three threads, without an object
+stage. An authored MSL mesh function reads the index and vertex buffers and
+applies the start index and base vertex; the indexed pass's fragment functions
+shade it. Validation is the indexed pass's and runs first. A device outside the
+Metal 3 GPU family then fails with the capability error
+`MetalError::MESH_UNAVAILABLE`. Its GPU test compares every indexed case with
+the same independent expectations, but it has not yet run on Apple hardware.
+Translated RDNA 2 mesh, primitive or geometry shaders are unsupported; see the
+[mesh-stage research notes](research/mesh-stages.md).

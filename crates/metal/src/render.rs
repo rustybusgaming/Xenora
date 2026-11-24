@@ -21,6 +21,10 @@ use super::{
     validate_source,
 };
 
+// Indexed passes drawn through the mesh pipeline; shares this module's helpers.
+#[path = "mesh.rs"]
+mod mesh;
+
 const MAX_PIXELS: usize = 4096;
 const PIXEL_FORMAT: MTLPixelFormat = MTLPixelFormat::RGBA8Unorm;
 

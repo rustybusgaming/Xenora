@@ -6,7 +6,7 @@ use super::indexed_cases::{
 };
 use super::{context, native};
 
-fn metal_draws(case: &Case) -> Vec<IndexedDraw> {
+pub(super) fn metal_draws(case: &Case) -> Vec<IndexedDraw> {
     case.draws
         .iter()
         .map(|draw| IndexedDraw {
@@ -21,7 +21,7 @@ fn metal_draws(case: &Case) -> Vec<IndexedDraw> {
         .collect()
 }
 
-fn bc1_upload() -> Bc1Upload<'static> {
+pub(super) fn bc1_upload() -> Bc1Upload<'static> {
     Bc1Upload::new(
         &BC1_BLOCKS,
         Bc1UploadDesc {

@@ -114,11 +114,15 @@ impl MetalError {
     /// compression, which is a hardware capability, not an implementation fault.
     pub const BC_UNAVAILABLE: &'static str = "supportsBCTextureCompression";
 
+    /// Operation name of the error returned when the device is outside the
+    /// Metal 3 GPU family that [`NativeCompute::render_mesh`] requires.
+    pub const MESH_UNAVAILABLE: &'static str = "supportsFamily(Metal3)";
+
     /// Whether the device lacks a required capability, as opposed to a failure
     /// in Xenora's validation or Metal execution.
     #[must_use]
     pub fn is_capability_unavailable(&self) -> bool {
-        self.operation == Self::BC_UNAVAILABLE
+        self.operation == Self::BC_UNAVAILABLE || self.operation == Self::MESH_UNAVAILABLE
     }
 
     pub(crate) fn new(operation: &'static str, detail: impl Into<String>) -> Self {

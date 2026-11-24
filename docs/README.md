@@ -18,6 +18,7 @@ either path. The [changelog](../CHANGELOG.md) records notable changes.
 - [Translated offscreen stages](interfaces.md#translated-offscreen-stages) — Translated vertex and pixel stages for the bounded gfx1030 subset.
 - [Blend and depth passes](interfaces.md) — Native blend and depth graphics passes with per-draw state.
 - [Apple GPU evidence](research/apple-gpu.md) and [host lab record](research/host-lab.md) — Observed behavior and historical floating-point results.
+- [Mesh and geometry stages (X13)](research/mesh-stages.md) — The native mesh-pipeline pass, its evidence and the open research tasks for mesh, geometry and further compute stages.
 
 ## RDNA 2 decoding and shader translation
 
